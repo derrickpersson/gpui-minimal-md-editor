@@ -13,7 +13,10 @@ pub struct StateModel {
 
 #[derive(Debug)]
 pub enum TextEvent {
-    Input { text: String },
+    Input { 
+        keystroke: Keystroke,
+        position: usize,
+    },
     Movement(TextMovement),
     Submit {},
 }
@@ -37,8 +40,24 @@ impl StateModel {
             let _ = cx.update_model(&model, |state, cx| {
                 std::dbg!("Updating the model!");
                 match event {
-                    TextEvent::Input { text } => {
-                        state.text.insert(0, text);
+                    TextEvent::Input { keystroke, position } => {
+                        match keystroke.key.as_str() {
+                            "backspace" => {
+                                if *position > 0 {
+                                    state.text.delete(*position - 1, 1);
+                                }
+                            }
+                            "enter" => {
+                                state.text.insert(*position, "\n");
+                            }
+                            "space" => {
+                                state.text.insert(*position, " ");
+                            }
+                            text => {
+                                state.text.insert(*position, text);
+                            }
+                        }
+                        
                     }
                     _ => {}
                 }

@@ -82,6 +82,8 @@ impl Render for RawText {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         cx.focus(&self.focus_handle);
         let model = self.model.clone();
+        // TODO: Implement cursor model, for now, always set cursor to the end of the text
+        let cursor_position = model.inner.read(cx).text.content().len(); 
         div()
             .track_focus(&self.focus_handle)
             .flex()
@@ -92,7 +94,10 @@ impl Render for RawText {
             .on_key_down( move |event, window_context| {
                 model.inner.update(window_context, |state, model_context| {
 
-                    model_context.emit(TextEvent::Input { text: event.keystroke.key.clone() });
+                    model_context.emit(TextEvent::Input { 
+                        keystroke: event.keystroke.clone(),
+                        position: cursor_position.clone(),
+                    });
                     // let keystroke = &event.keystroke.key;
                     // // TODO: Handle special key strokes (i.e. space, backspace, etc.)
                     // // TODO: Implement CURSOR model, handle cursor movement

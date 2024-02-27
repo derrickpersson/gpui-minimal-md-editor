@@ -166,4 +166,11 @@ mod tests {
         piece_table.delete(5, 1);
         assert_eq!(piece_table.content(), "Hello Beautiful World");
     }
+
+    #[test]
+    fn test_piece_table_deletion_handles_empty_state() {
+        let mut piece_table = PieceTable::new("");
+        piece_table.delete(0, 1);
+        assert_eq!(piece_table.content(), "");
+    }
 }
