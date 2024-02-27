@@ -34,9 +34,15 @@ impl StateModel {
 
         cx.subscribe(&model, |model, event: &TextEvent, cx| {
             std::dbg!("Incoming event: {}", event);
-            let _ = cx.update_model(&model, |model, cx| {
+            let _ = cx.update_model(&model, |state, cx| {
                 std::dbg!("Updating the model!");
-                // TODO: Update the model here! -> model.text.insert(0, event.keystroke) .... ;
+                match event {
+                    TextEvent::Input { text } => {
+                        state.text.insert(0, text);
+                    }
+                    _ => {}
+                }
+                std::dbg!(state.text.content());
                 cx.notify();
             });
         })

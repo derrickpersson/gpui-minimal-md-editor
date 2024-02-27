@@ -1,4 +1,5 @@
 use gpui::*;
+use super::state::*;
 
 pub struct Workspace {
     text_view: View<RawText>,
@@ -39,24 +40,69 @@ pub fn run_app(app: App) {
 }
 
 struct RawText {
-    // focus_handle: FocusHandle,
+    focus_handle: FocusHandle,
+    pub content: String,
+    pub model: StateModel,
 }
 
 impl RawText {
     pub fn build(cx: &mut WindowContext) -> View<Self> {
-        cx.new_view(| _cx | Self {})
+        let focus_handle = cx.focus_handle();
+        let fh = focus_handle.clone();
+        let view = cx.new_view(move |cx| {
+            let model = cx.global::<StateModel>().clone();
+            let content = model.inner.read(cx).text.content();
+            cx.observe(&model.inner, |this: &mut RawText, model, cx| {
+                this.content = model.read(cx).text.content();
+                cx.notify();
+            })
+            .detach();
+            cx.on_focus(&fh, |_, _cx| {
+                std::dbg!("Focused!");
+            })
+            .detach();
+            cx.on_blur(&fh, |_, cx| {
+                std::dbg!("Blurred!!");
+                cx.hide();
+            })
+            .detach();
+            Self {
+                focus_handle,
+                content,
+                model,
+            }
+        });
+        view
     }
 }
 
+impl EventEmitter<TextEvent> for RawText {}
+
 impl Render for RawText {
-    fn render(&mut self, _cx: &mut ViewContext<Self>) -> impl IntoElement {
+    fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
+        cx.focus(&self.focus_handle);
+        let model = self.model.clone();
         div()
+            .track_focus(&self.focus_handle)
             .flex()
             .bg(rgb(0x2a2a2a))
             .text_color(rgb(0xffffff))
             .py_2()
             .px_4()
-            .child("Displaying RAW TEXT!")
+            .on_key_down( move |event, window_context| {
+                model.inner.update(window_context, |state, model_context| {
+
+                    model_context.emit(TextEvent::Input { text: event.keystroke.key.clone() });
+                    // let keystroke = &event.keystroke.key;
+                    // // TODO: Handle special key strokes (i.e. space, backspace, etc.)
+                    // // TODO: Implement CURSOR model, handle cursor movement
+                    // model.text.insert(0, keystroke);
+                    // std::dbg!(&keystroke);
+                    // std::dbg!(&model.text.content());
+                    // model_context.notify();
+                });
+            })
+            .child(format!("{}", self.content))
             // .cursor(CursorStyle::PointingHand)
             // .on_mouse_down(MouseButton::Left, |_mde, cx| {
             //     StateModel::update(
