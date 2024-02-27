@@ -23,17 +23,16 @@ impl PieceTable {
         }
     }
 
-    pub fn insert(&mut self, pos: usize, text: &str) {
-        let end = pos + text.len();
-        self.replace(pos, pos, text);
+    pub fn insert(&mut self, pos: usize, text: &str) -> &mut Self {
+        self.replace(pos, pos, text)
     }
 
-    pub fn delete(&mut self, pos: usize, length: usize) {
+    pub fn delete(&mut self, pos: usize, length: usize) -> &mut Self {
         let end = pos + length;
-        self.replace(pos, end, "");
+        self.replace(pos, end, "")
     }
 
-    fn replace(&mut self, start: usize, end: usize, text: &str) {
+    fn replace(&mut self, start: usize, end: usize, text: &str) -> &mut Self {
         // add_buffer_start = length of the 'add' buffer before adding 'text'
         let add_buffer_start = self.add.len();
         // Add text to the add buffer
@@ -114,6 +113,7 @@ impl PieceTable {
                 });
             }
         }
+        self
     }
 
     pub fn content(&self) -> String {
@@ -165,5 +165,12 @@ mod tests {
         assert_eq!(piece_table.content(), "Hello, Beautiful World");
         piece_table.delete(5, 1);
         assert_eq!(piece_table.content(), "Hello Beautiful World");
+    }
+
+    #[test]
+    fn test_piece_table_deletion_handles_empty_state() {
+        let mut piece_table = PieceTable::new("");
+        piece_table.delete(0, 1);
+        assert_eq!(piece_table.content(), "");
     }
 }
