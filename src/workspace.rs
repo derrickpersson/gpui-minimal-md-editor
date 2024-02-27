@@ -94,33 +94,15 @@ impl Render for RawText {
             .on_key_down( move |event, window_context| {
                 model.inner.update(window_context, |state, model_context| {
 
+                    // TODO: Handle special key strokes (i.e. space, backspace, etc.)
+                    // TODO: Implement CURSOR model, handle cursor movement
+
                     model_context.emit(TextEvent::Input { 
                         keystroke: event.keystroke.clone(),
                         position: cursor_position.clone(),
                     });
-                    // let keystroke = &event.keystroke.key;
-                    // // TODO: Handle special key strokes (i.e. space, backspace, etc.)
-                    // // TODO: Implement CURSOR model, handle cursor movement
-                    // model.text.insert(0, keystroke);
-                    // std::dbg!(&keystroke);
-                    // std::dbg!(&model.text.content());
-                    // model_context.notify();
                 });
             })
             .child(format!("{}", self.content))
-            // .cursor(CursorStyle::PointingHand)
-            // .on_mouse_down(MouseButton::Left, |_mde, cx| {
-            //     StateModel::update(
-            //         |model, cx| {
-            //             cx.update_model(&model.inner, |_model, cx| {
-            //                 let message = OutgoingMessage {
-            //                     message: "Hello from the other side".into(),
-            //                 };
-            //                 cx.emit(message);
-            //             })
-            //         },
-            //         cx,
-            //     );
-            // })
     }
 }
