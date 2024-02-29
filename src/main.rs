@@ -3,6 +3,7 @@ use gpui::*;
 mod state;
 mod workspace;
 mod piece_table;
+mod cursor;
 
 use state::StateModel;
 use workspace::Workspace;

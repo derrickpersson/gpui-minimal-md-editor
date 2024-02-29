@@ -13,7 +13,7 @@ pub struct PieceTable {
 impl PieceTable {
     pub fn new(string: &str) -> Self {
         Self {
-            original: String::from(string.to_string()),
+            original: String::from(string),
             add: String::new(),
             pieces: vec![Piece {
                 start: 0,

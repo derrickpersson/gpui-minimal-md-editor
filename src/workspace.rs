@@ -1,5 +1,6 @@
 use gpui::*;
 use super::state::*;
+use super::cursor::Cursor;
 
 pub struct Workspace {
     text_view: View<RawText>,
@@ -16,15 +17,17 @@ impl Workspace {
 }
 
 impl Render for Workspace {
-    fn render(&mut self, _cx: &mut ViewContext<Self>) -> impl IntoElement {
+    fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
+        let cursor_el = Cursor::new();
+        cx.with_element_context(|cx| {
+            cx.with_z_index(1, |cx| {
+                std::dbg!("Rendering the cursor!!!!");
+                cursor_el.paint(Point::<Pixels>::new(Pixels::ZERO, Pixels::ZERO), cx)
+            });
+        });
         std::dbg!("Rendering Workspace view");
         div()
             .size_full()
-            .flex()
-            .flex_col()
-            .bg(rgb(0x333333))
-            .justify_center()
-            .items_center()
             .child(self.text_view.clone())
     }
 }
@@ -85,12 +88,14 @@ impl Render for RawText {
         // TODO: Implement cursor model, for now, always set cursor to the end of the text
         let cursor_position = model.inner.read(cx).text.content().len(); 
         div()
-            .track_focus(&self.focus_handle)
-            .flex()
-            .bg(rgb(0x2a2a2a))
+            .py_4()
+            .px_16()
+            .w_full()
+            .h_full()
+            .bg(rgb(0x333333))
             .text_color(rgb(0xffffff))
-            .py_2()
-            .px_4()
+            .track_focus(&self.focus_handle)
+            .cursor_text()
             .on_key_down( move |event, window_context| {
                 model.inner.update(window_context, |state, model_context| {
 
@@ -104,5 +109,6 @@ impl Render for RawText {
                 });
             })
             .child(format!("{}", self.content))
+            
     }
 }
