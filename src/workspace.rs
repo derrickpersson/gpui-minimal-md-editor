@@ -18,13 +18,6 @@ impl Workspace {
 
 impl Render for Workspace {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
-        let cursor_el = Cursor::new();
-        cx.with_element_context(|cx| {
-            cx.with_z_index(1, |cx| {
-                std::dbg!("Rendering the cursor!!!!");
-                cursor_el.paint(Point::<Pixels>::new(Pixels::ZERO, Pixels::ZERO), cx)
-            });
-        });
         std::dbg!("Rendering Workspace view");
         div()
             .size_full()
@@ -83,6 +76,13 @@ impl EventEmitter<TextEvent> for RawText {}
 
 impl Render for RawText {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
+        let cursor_el = Cursor::new();
+        cx.with_element_context(|cx| {
+            cx.with_z_index(1, |cx| {
+                std::dbg!("Rendering the cursor!!!!");
+                cursor_el.paint(Point::<Pixels>::new(Pixels::ZERO, Pixels::ZERO), cx)
+            });
+        });
         cx.focus(&self.focus_handle);
         let model = self.model.clone();
         // TODO: Implement cursor model, for now, always set cursor to the end of the text

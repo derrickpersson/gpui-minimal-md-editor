@@ -7,7 +7,7 @@ pub struct Cursor {
 }
 
 
-// impl Cursor {
+// impl TrackingCursor {
 //     pub fn new() -> Self {
 //         Self {
 //             selection: 0..0,
@@ -42,12 +42,12 @@ pub struct Cursor {
 
 impl Cursor {
     pub fn new(
-        // origin: gpui::Point<Pixels>,
+        origin: gpui::Point<Pixels>,
         // line_height: Pixels,
         // color: Hsla,
     ) -> Cursor {
         Self {
-            origin: Point::<Pixels>::new(Pixels::ZERO, Pixels::ZERO),
+            origin,
             line_height: Pixels(20.0),
             color: Hsla::blue(),
         }
