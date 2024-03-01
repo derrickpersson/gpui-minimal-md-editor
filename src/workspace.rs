@@ -20,8 +20,9 @@ impl Render for Workspace {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         std::dbg!("Rendering Workspace view");
         div()
-            .w_full()
-            .h_full()
+            .size_full()
+            .py_2()
+            .px_4()
             .bg(rgb(0x333333))
             .child(cx.new_view(| cx| {
                 Editor::new(cx)

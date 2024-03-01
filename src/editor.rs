@@ -1,6 +1,8 @@
 use std::sync::Arc;
 
 use gpui::*;
+use crate::cursor::Cursor;
+
 use super::piece_table::PieceTable;
 
 pub struct PositionMap {
@@ -75,7 +77,7 @@ impl EditorElement {
     fn compute_layout(&mut self, bounds: Bounds<Pixels>, cx: &mut ElementContext) -> LayoutState {
         std::dbg!("Bounds given to Compute_layout {}", bounds);
         std::dbg!("Isn't bounds supposed to be > 0? Is this the problem?");
-        assert!(bounds.size.width > px(0.0) && bounds.size.height > px(0.0));
+        // assert!(bounds.size.height > px(0.0));
         self.editor.update(cx,|_editor, cx| {
             let style = Style::default();
             let font_id = cx.text_system().resolve_font(&TextStyle::default().font());
@@ -149,29 +151,26 @@ impl EditorElement {
     ) {
         let start_row = 0;
         let content_origin = text_bounds.origin;
-        cx.with_content_mask(Some(ContentMask {
-            bounds: text_bounds,
-        }), |cx| {
-            cx.with_z_index(1, |cx| {
-                for (ix, editor_line) in
-                    layout.position_map.line_layouts.iter().enumerate()
-                {
-                    let row = start_row + ix as u32;
-                    std::dbg!("Drawing line: {}", row);
-                    editor_line.draw(
-                        layout,
-                        row,
-                        content_origin,
-                        cx,
-                    )
-                }
-            });
-            
-            // cx.with_z_index(1, |cx| {
-            //     cursor.paint(content_origin, cx);
-            // });
-        })
-
+        for (ix, editor_line) in
+            layout.position_map.line_layouts.iter().enumerate()
+        {
+            let row = start_row + ix as u32;
+            std::dbg!("Drawing line: {}", row);
+            editor_line.draw(
+                layout,
+                row,
+                content_origin,
+                cx,
+            )
+        }
+        let cursor = Cursor::new(
+            Point::new(px(0.), px(0.)),
+        );
+        
+        cx.with_z_index(1, |cx| {
+            std::dbg!("Painting cursor! {}", content_origin);
+            cursor.paint(content_origin, cx)
+        });
     }
 }
 
