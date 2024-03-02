@@ -75,10 +75,7 @@ impl EditorElement {
 
 
     fn compute_layout(&mut self, bounds: Bounds<Pixels>, cx: &mut ElementContext) -> LayoutState {
-        std::dbg!("Bounds given to Compute_layout {}", bounds);
-        std::dbg!("Isn't bounds supposed to be > 0? Is this the problem?");
-        // assert!(bounds.size.height > px(0.0));
-        self.editor.update(cx,|_editor, cx| {
+        self.editor.update(cx,|editor, cx| {
             let style = Style::default();
             let font_id = cx.text_system().resolve_font(&TextStyle::default().font());
             let font_size = style.text.font_size.unwrap_or(TextStyle::default().font_size).to_pixels(cx.rem_size());
@@ -97,6 +94,7 @@ impl EditorElement {
             let text_width = px(600.0);
             let overscroll = size(em_width, px(0.));
             let text_size = size(text_width, px(600.0));
+            let content = editor.buffer.read(cx).content().clone();
             LayoutState {
                 text_size,
                 line_height,
@@ -104,7 +102,7 @@ impl EditorElement {
                     size: bounds.size,
                     scroll_max: point(0., 0.),
                     scroll_position: point(px(0.), px(0.)),
-                    line_layouts: self.layout_lines(text_width, cx),
+                    line_layouts: self.layout_lines(&content, text_width, cx),
                     line_height,
                     em_width,
                     em_advance,
@@ -113,10 +111,8 @@ impl EditorElement {
         })
     }
 
-    fn layout_lines(&self, text_width: Pixels, cx: &ViewContext<Editor>) -> Vec<EditorLine> {
+    fn layout_lines(&self, content: &str, text_width: Pixels, cx: &ViewContext<Editor>) -> Vec<EditorLine> {
         let mut layouts =Vec::new();
-        // let content = self.editor.read(cx).buffer.read(cx).content();
-        let content = String::from("Hello from layout_lines!\nThis is a test!");
         let lines: Vec<String> = content.split('\n').map(|line| line.to_string()).collect();
         for line in lines {
             let font_id = cx.text_system().resolve_font(&TextStyle::default().font());
@@ -216,27 +212,3 @@ impl IntoElement for EditorElement {
         self
     }
 }
-
-    // fn compute_layout(&mut self, bounds: Bounds<Pixels>, cx: &mut ElementContext) -> LayoutState {
-    //     let style = self.style.clone();
-    //     let font_id = cx.text_system().resolve_font(&style.text.font());
-    //     let font_size = style.text.font_size.to_pixels(cx.rem_size());
-    //     let line_height = style.text.line_height_in_pixels(cx.rem_size());
-    //     let em_width = cx
-    //         .text_system()
-    //         .typographic_bounds(font_id, font_size, 'm')
-    //         .unwrap()
-    //         .size
-    //         .width;
-    //     let em_advance = cx
-    //         .text_system()
-    //         .advance(font_id, font_size, 'm')
-    //         .unwrap()
-    //         .width;
-    //     let text_width = bounds.size.width;
-    //     let overscroll = size(em_width, px(0.));
-    //     let text_size = size(text_width, bounds.size.height);
-    //     LayoutState {
-    //         text_size,
-    //     }
-    // }
