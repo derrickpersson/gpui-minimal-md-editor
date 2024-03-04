@@ -12,7 +12,7 @@ pub struct StateModel {
 }
 
 #[derive(Debug)]
-pub enum TextEvent {
+pub enum EditorEvent {
     Input { 
         keystroke: Keystroke,
         position: usize,
@@ -27,7 +27,7 @@ pub enum TextMovement {
     Down,
 }
 
-impl EventEmitter<TextEvent> for State {}
+impl EventEmitter<EditorEvent> for State {}
 
 impl StateModel {
     pub fn init(cx: &mut WindowContext) {
@@ -35,12 +35,12 @@ impl StateModel {
             text: PieceTable::new(""),
         });
 
-        cx.subscribe(&model, |model, event: &TextEvent, cx| {
+        cx.subscribe(&model, |model, event: &EditorEvent, cx| {
             std::dbg!("Incoming event: {}", event);
             let _ = cx.update_model(&model, |state, cx| {
                 std::dbg!("Updating the model!");
                 match event {
-                    TextEvent::Input { keystroke, position } => {
+                    EditorEvent::Input { keystroke, position } => {
                         match keystroke.key.as_str() {
                             "backspace" => {
                                 if *position > 0 {

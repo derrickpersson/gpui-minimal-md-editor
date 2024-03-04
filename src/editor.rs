@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{ops::Range, sync::Arc};
 
 use gpui::*;
 use crate::cursor::Cursor;
@@ -41,6 +41,7 @@ pub struct LayoutState {
 pub struct Editor {
     focus_handle: FocusHandle,
     buffer: Model<PieceTable>,
+    selection_range: Option<Range<usize>>,
 }
 
 
@@ -52,8 +53,23 @@ impl Editor {
     pub fn new(cx: &mut WindowContext) -> Self {
         let focus_handle = cx.focus_handle();
         let fh = focus_handle.clone();
-        let model = cx.new_model(|_| PieceTable::new("Hello World!"));
-        Editor { focus_handle, buffer: model }
+        let model = cx.new_model(|_| PieceTable::new(""));
+        let _ = cx.observe(&model, |model, cx| {
+            std::dbg!("Model updated! We should do something... {}", model.read(cx).content());
+            // TODO - Recreate the editor model / view here.
+            cx.refresh(); // -> Works, but not the right way I'm pretty sure.
+        }).detach();
+        Editor { 
+            focus_handle, 
+            buffer: model,
+            selection_range: Some(0..0),
+        }
+    }
+
+    fn key_context(&self, cx: &AppContext) -> KeyContext {
+        let mut key_context = KeyContext::default();
+        key_context.add("Editor");
+        key_context
     }
 }
 
@@ -64,12 +80,101 @@ impl Render for Editor {
     }
 }
 
+impl ViewInputHandler for Editor {
+    fn text_for_range(&mut self, range: Range<usize>, cx: &mut ViewContext<Editor>) -> Option<String> {
+        self.buffer.read(cx).content().get(range.clone()).map(|s| s.to_string())
+    }
+
+    fn selected_text_range(&mut self, cx: &mut ViewContext<Editor>) -> Option<Range<usize>> {
+        // Assuming `self` has a field `selection_range` representing the selected text
+        self.selection_range.clone()
+    }
+
+    fn marked_text_range(&self, cx: &mut ViewContext<Editor>) -> Option<Range<usize>> {
+        // Assuming `self` has a field `marked_range` representing the marked text
+        std::dbg!("marked_text_range", &self.selection_range);
+        self.selection_range.clone()
+    }
+
+    fn unmark_text(&mut self, cx: &mut ViewContext<Editor>) {
+        // Assuming `self` has a method to unmark text
+        std::dbg!("unmark_text");
+    }
+
+    fn replace_text_in_range(&mut self, range: Option<Range<usize>>, text: &str, cx: &mut ViewContext<Editor>) {
+
+        std::dbg!("Trying to update a range of text: {}", &range, &text);
+        
+        self.buffer.update(cx, |buffer, mod_cx| {
+            std::dbg!("Updating text in range!");
+            let range = range.unwrap_or(0..0);
+            buffer.replace(range.start, range.end, text);
+            mod_cx.notify();
+            // mod_cx.emit(EditorEvent::InputHandled {
+            //     range,
+            //     text: text.to_string(),
+            // });
+        });
+    }
+
+    fn replace_and_mark_text_in_range(&mut self, range: Option<Range<usize>>, text: &str, mark_range: Option<Range<usize>>, cx: &mut ViewContext<Editor>) {
+        // Assuming `self.buffer` has a method to replace and mark text in a given range
+        unimplemented!()
+    }
+
+    fn bounds_for_range(&mut self, range: Range<usize>, element_bounds: Bounds<Pixels>, cx: &mut ViewContext<Editor>) -> Option<Bounds<Pixels>> {
+        std::dbg!("Bounds for range: {:?}", range);
+        let style = Style::default();
+        let font_id = cx.text_system().resolve_font(&TextStyle::default().font());
+        let font_size = style.text.font_size.unwrap_or(TextStyle::default().font_size).to_pixels(cx.rem_size());
+        let line_height = phi().to_pixels(rems(1.0).into(), cx.rem_size()).round();
+        let em_width = cx
+            .text_system()
+            .typographic_bounds(font_id, font_size, 'm')
+            .unwrap()
+            .size
+            .width;
+        
+        Some(Bounds {
+            origin: element_bounds.origin, // TODO - adjust based on x, y of point of range.
+            size: size(em_width, line_height),
+        })
+    }
+}
+
+
+#[derive(Clone, Debug)]
+pub enum EditorEvent {
+    InputHandled {
+        range: Range<usize>,
+        text: String,
+    },
+    Movement(CursorSelectionMovement),
+}
+
+#[derive(Debug, Clone)]
+pub enum CursorSelectionMovement {
+    Left,
+    Right,
+    Up,
+    Down,
+}
+
+impl EventEmitter<EditorEvent> for Editor {}
+
+impl FocusableView for Editor {
+    fn focus_handle(&self, _cx: &AppContext) -> FocusHandle {
+        self.focus_handle.clone()
+    }
+}
+
 impl EditorElement {
     pub fn new(editor: &View<Editor>) -> Self {
         Self { editor: editor.clone() }
     }
 
     fn register_actions(&self, cx: &mut WindowContext) {
+
         // TODO: Register different actions that can be taken, i.e. undo, redo, etc.
     }
 
@@ -95,6 +200,7 @@ impl EditorElement {
             let overscroll = size(em_width, px(0.));
             let text_size = size(text_width, px(600.0));
             let content = editor.buffer.read(cx).content().clone();
+            std::dbg!("Content: {}", &content);
             LayoutState {
                 text_size,
                 line_height,
@@ -195,6 +301,16 @@ impl Element for EditorElement {
                     origin: bounds.origin,
                     size: layout.text_size,
                 };
+
+                let focus_handle = editor.focus_handle(cx);
+                let key_context = editor.read(cx).key_context(cx);
+
+                cx.with_key_dispatch(Some(key_context), Some(focus_handle.clone()), |fh, cx| {
+                    cx.handle_input(
+                        &focus_handle,
+                        ElementInputHandler::new(text_bounds, self.editor.clone()),
+                    );
+                });
                 std::dbg!("Painting editor Element Text", text_bounds);
                 self.paint_text(bounds, &mut layout, cx)
             })

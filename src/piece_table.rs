@@ -32,7 +32,7 @@ impl PieceTable {
         self.replace(pos, end, "")
     }
 
-    fn replace(&mut self, start: usize, end: usize, text: &str) -> &mut Self {
+    pub fn replace(&mut self, start: usize, end: usize, text: &str) -> &mut Self {
         // add_buffer_start = length of the 'add' buffer before adding 'text'
         let add_buffer_start = self.add.len();
         // Add text to the add buffer
