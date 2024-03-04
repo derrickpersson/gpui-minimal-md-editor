@@ -50,18 +50,13 @@ pub struct EditorElement {
 }
 
 impl Editor {
-    pub fn new(cx: &mut WindowContext) -> Self {
+    pub fn new(buffer: Model<PieceTable>, cx: &mut ViewContext<Self>) -> Self {
         let focus_handle = cx.focus_handle();
         let fh = focus_handle.clone();
-        let model = cx.new_model(|_| PieceTable::new(""));
-        let _ = cx.observe(&model, |model, cx| {
-            std::dbg!("Model updated! We should do something... {}", model.read(cx).content());
-            // TODO - Recreate the editor model / view here.
-            cx.refresh(); // -> Works, but not the right way I'm pretty sure.
-        }).detach();
+        cx.observe(&buffer, Self::on_buffer_changed);
         Editor { 
             focus_handle, 
-            buffer: model,
+            buffer: buffer.clone(),
             selection_range: Some(0..0),
         }
     }
@@ -70,6 +65,10 @@ impl Editor {
         let mut key_context = KeyContext::default();
         key_context.add("Editor");
         key_context
+    }
+
+    fn on_buffer_changed(&mut self, _: Model<PieceTable>, cx: &mut ViewContext<Self>) {
+        cx.notify();
     }
 }
 

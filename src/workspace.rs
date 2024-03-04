@@ -1,4 +1,6 @@
 use gpui::*;
+
+use super::piece_table::PieceTable;
 use super::editor::*;
 
 pub struct Workspace {
@@ -7,9 +9,17 @@ pub struct Workspace {
 
 impl Workspace {
     pub fn build(cx: &mut WindowContext) -> View<Self> {
-        let view = cx.new_view(|cx| {
-            let editor = Editor::new(cx);
-            Workspace { editor }
+        let view: View<Workspace> = cx.new_view(|cx| {
+            let model = cx.new_model(|_| PieceTable::new(""));
+            let editor = Editor::new(model, cx);
+            // let _ = cx.observe(&model, |workspace, model, cx| {
+            //     std::dbg!("Model updated! We should do something... {}", model.read(cx).content());
+            //     // TODO - Recreate the editor model / view here.
+            //     // cx.update_view(&editor, cx);// -> Works, but not the right way I'm pretty sure.
+            // }).detach();
+            Workspace {
+                editor,
+            }
         });
         view
     }
