@@ -6,40 +6,6 @@ pub struct Cursor {
     color: Hsla,
 }
 
-
-// impl TrackingCursor {
-//     pub fn new() -> Self {
-//         Self {
-//             selection: 0..0,
-//         }
-//     }
-
-//     pub fn reset(&mut self) {
-//         self.selection = 0..0;
-//     }
-
-//     pub fn select_all(&mut self, text: &str) {
-//         self.selection = 0..text.len();
-//     }
-
-//     pub fn move_left(&mut self) {
-//         if self.selection.start > 0 {
-//             let i = if self.selection.start == self.selection.end {
-//                 self.selection.start - 1
-//             } else {
-//                 self.selection.start
-//             };
-//             self.selection = i..i;
-//         }
-//     }
-
-//     pub fn move_right(&mut self) {
-//         if self.selection.end < self.selection.end {
-//             self.selection = self.selection.start..self.selection.end + 1;
-//         }
-//     }
-// }
-
 impl Cursor {
     pub fn new(
         origin: gpui::Point<Pixels>,

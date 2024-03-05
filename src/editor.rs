@@ -34,6 +34,8 @@ pub struct LayoutState {
     /// Size of the text area
     text_size: gpui::Size<Pixels>,
     line_height: Pixels,
+    selection_range: Option<Range<usize>>,
+    cursor_point: Point<usize>,
 }
 
 
@@ -41,7 +43,8 @@ pub struct LayoutState {
 pub struct Editor {
     focus_handle: FocusHandle,
     buffer: Model<PieceTable>,
-    selection_range: Option<Range<usize>>,
+    pub selection_range: Option<Range<usize>>,
+    pub cursor_point: Point<usize>,
 }
 
 
@@ -57,7 +60,8 @@ impl Editor {
         Editor { 
             focus_handle, 
             buffer: buffer.clone(),
-            selection_range: Some(0..0),
+            selection_range: None,
+            cursor_point: Point::new(0, 0),
         }
     }
 
@@ -74,6 +78,11 @@ impl Editor {
 
     pub fn set_selection(&mut self, range: Range<usize>, cx: &mut ViewContext<Self>) {
         self.selection_range = Some(range);
+        cx.notify();
+    }
+
+    pub fn set_cursor(&mut self, point: Point<usize>, cx: &mut ViewContext<Self>) {
+        self.cursor_point = point;
         cx.notify();
     }
 }
@@ -211,6 +220,8 @@ impl EditorElement {
                     em_width,
                     em_advance,
                 }),
+                selection_range: editor.selection_range.clone(),
+                cursor_point: editor.cursor_point.clone(),
             }
         })
     }
@@ -268,8 +279,13 @@ impl EditorElement {
         );
         
         cx.with_z_index(1, |cx| {
-            std::dbg!("Painting cursor! {}", content_origin);
-            cursor.paint(content_origin, cx)
+            std::dbg!("Painting cursor! {}", layout.cursor_point);
+            let x = layout.position_map.line_layouts[0].line.x_for_index(layout.cursor_point.x);
+
+            cursor.paint(Point {
+                x: x + content_origin.x,
+                y: content_origin.y,
+            }, cx)
         });
     }
 }

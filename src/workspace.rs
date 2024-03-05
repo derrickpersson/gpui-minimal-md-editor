@@ -26,6 +26,10 @@ impl Workspace {
                         });
                         cx.update_view(&view, |view, cx| {
                             view.set_selection(range.start + text.len()..range.start + text.len(), cx);
+                            view.set_cursor(Point {
+                                x: view.cursor_point.x + text.len(),
+                                y: 0,
+                            }, cx);
                         });
                     },
                     _ => {}
