@@ -4,6 +4,7 @@ mod workspace;
 mod piece_table;
 mod cursor;
 mod editor;
+mod editor_element;
 
 use workspace::Workspace;
 
