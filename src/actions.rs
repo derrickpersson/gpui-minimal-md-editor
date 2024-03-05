@@ -1,0 +1,6 @@
+gpui::actions!(
+    editor,
+    [
+        MoveLeft,
+    ]
+);
