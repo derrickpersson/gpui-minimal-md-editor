@@ -1,12 +1,10 @@
 use gpui::*;
 
-mod state;
 mod workspace;
 mod piece_table;
 mod cursor;
 mod editor;
 
-use state::StateModel;
 use workspace::Workspace;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -25,7 +23,6 @@ fn main() {
                 }),
                 ..Default::default()
             }, |cx| {
-            StateModel::init(cx);
             let view = Workspace::build(cx);
             view
         });

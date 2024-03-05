@@ -44,7 +44,7 @@ impl Render for Workspace {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         std::dbg!("Rendering Workspace view");
         let editor = self.editor.clone();
-                // TODO - there's a better way to do this:
+                // TODO - there's probably a better way to do this:
                 // Automatically focus the editor. 
                 editor.focus_handle(cx).focus(cx);
                 
