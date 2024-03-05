@@ -1,7 +1,10 @@
 use gpui::*;
 
+use crate::actions::MoveLeft;
+
 use super::piece_table::PieceTable;
 use super::editor::*;
+// use super::keymap::default_keymap;
 
 pub struct Workspace {
     editor: View<Editor>,
@@ -9,6 +12,24 @@ pub struct Workspace {
 
 impl Workspace {
     pub fn build(cx: &mut WindowContext) -> View<Self> {
+        // let key_bindings = default_keymap();
+        let key_bindings = vec![KeyBinding::new(
+            "left",
+            MoveLeft,
+            Some("editor")
+        )];
+
+        // Example keymap:
+        // let keymap = Keymap::new(vec![KeyBinding::new(
+        //     "cmd-n",
+        //     TestAction,
+        //     Some("ProjectPanel"),
+        // )]);
+
+        std::dbg!("Key bindings: {:?}", &key_bindings);
+
+        cx.bind_keys(key_bindings);
+
         let view: View<Workspace> = cx.new_view(|cx | {
             let model = cx.new_model(|_| PieceTable::new(""));
             let editor = cx.new_view(|cx| {
@@ -27,7 +48,7 @@ impl Workspace {
                         cx.update_view(&view, |view, cx| {
                             view.set_selection(range.start + text.len()..range.start + text.len(), cx);
                             view.set_cursor(Point {
-                                x: view.cursor_point.x + text.len(),
+                                x: view.selection.head.x + text.len(),
                                 y: 0,
                             }, cx);
                         });

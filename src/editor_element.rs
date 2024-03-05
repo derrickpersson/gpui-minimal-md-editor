@@ -1,7 +1,7 @@
-use crate::cursor::Cursor;
+use crate::{actions::MoveLeft, cursor::Cursor};
 use gpui::*;
 use super::editor::Editor;
-use std::{ops::Range, sync::Arc};
+use std::{any::TypeId, ops::Range, sync::Arc};
 
 
 pub struct EditorElement {
@@ -13,8 +13,10 @@ impl EditorElement {
         Self { editor: editor.clone() }
     }
 
-    fn register_actions(&self, cx: &mut WindowContext) {
-
+    pub fn register_actions(&self, cx: &mut WindowContext) {
+        std::dbg!("Registering all the actions!");
+        let view = &self.editor;
+        register_action(view, cx, Editor::selection_move_left);
         // TODO: Register different actions that can be taken, i.e. undo, redo, etc.
     }
 
@@ -53,10 +55,7 @@ impl EditorElement {
                     em_width,
                     em_advance,
                 }),
-                selection: Selection {
-                    head: editor.cursor_point.clone(),
-                    selection_range: editor.selection_range.clone(),
-                }
+                selection: editor.selection.clone()
             }
         })
     }
@@ -153,8 +152,11 @@ impl Element for EditorElement {
 
                 let focus_handle = editor.focus_handle(cx);
                 let key_context = editor.read(cx).key_context(cx);
+                std::dbg!("Key context: {:?}", &key_context);
 
                 cx.with_key_dispatch(Some(key_context), Some(focus_handle.clone()), |fh, cx| {
+                    self.register_actions(cx);
+
                     cx.handle_input(
                         &focus_handle,
                         ElementInputHandler::new(text_bounds, self.editor.clone()),
@@ -210,7 +212,29 @@ pub struct LayoutState {
     selection: Selection,
 }
 
+#[derive(Clone)]
 pub struct Selection {
-    head: Point<usize>,
-    selection_range: Option<Range<usize>>,
+    pub head: Point<usize>,
+    pub range: Option<Range<usize>>,
+}
+
+
+pub fn register_action<T: Action>(
+    view: &View<Editor>,
+    cx: &mut WindowContext,
+    listener: impl Fn(&mut Editor, &T, &mut ViewContext<Editor>) + 'static,
+) {
+    std::dbg!("Registering action!");
+    let view = view.clone();
+    cx.on_action(TypeId::of::<T>(), move |action, phase, cx| {
+        std::dbg!("Action happened here!", &action);
+        let action = action.downcast_ref().unwrap();
+        std::dbg!("Action phase!", &phase);
+        if phase == DispatchPhase::Bubble {
+            view.update(cx, |editor, cx| {
+                std::dbg!("Action happened here, going to call the listener with it!");
+                listener(editor, action, cx);
+            })
+        }
+    })
 }

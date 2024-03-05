@@ -5,6 +5,8 @@ mod piece_table;
 mod cursor;
 mod editor;
 mod editor_element;
+mod actions;
+mod keymap;
 
 use workspace::Workspace;
 

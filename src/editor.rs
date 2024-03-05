@@ -2,6 +2,9 @@ use std::ops::Range;
 
 use gpui::*;
 
+use crate::actions::MoveLeft;
+use crate::editor_element::Selection;
+
 use super::piece_table::PieceTable;
 use super::editor_element::EditorElement;
 
@@ -9,8 +12,7 @@ use super::editor_element::EditorElement;
 pub struct Editor {
     focus_handle: FocusHandle,
     pub buffer: Model<PieceTable>,
-    pub selection_range: Option<Range<usize>>,
-    pub cursor_point: Point<usize>,
+    pub selection: Selection,
 }
 
 
@@ -23,14 +25,16 @@ impl Editor {
         Editor { 
             focus_handle, 
             buffer: buffer.clone(),
-            selection_range: None,
-            cursor_point: Point::new(0, 0),
+            selection: Selection {
+                head: Point::new(0, 0),
+                range: None,
+            },
         }
     }
 
     pub fn key_context(&self, cx: &AppContext) -> KeyContext {
         let mut key_context = KeyContext::default();
-        key_context.add("Editor");
+        key_context.add("editor");
         key_context
     }
 
@@ -40,12 +44,21 @@ impl Editor {
     }
 
     pub fn set_selection(&mut self, range: Range<usize>, cx: &mut ViewContext<Self>) {
-        self.selection_range = Some(range);
+        self.selection.range = Some(range);
         cx.notify();
     }
 
     pub fn set_cursor(&mut self, point: Point<usize>, cx: &mut ViewContext<Self>) {
-        self.cursor_point = point;
+        self.selection.head = point;
+        cx.notify();
+    }
+
+    pub fn selection_move_left(&mut self, ml: &MoveLeft, cx: &mut ViewContext<Self>) {
+        std::dbg!("Called moving left", &ml);
+
+        self.selection.head.x = (self.selection.head.x > 0)
+            .then(|| self.selection.head.x - 1)
+            .unwrap_or(0);
         cx.notify();
     }
 }
@@ -64,13 +77,14 @@ impl ViewInputHandler for Editor {
 
     fn selected_text_range(&mut self, cx: &mut ViewContext<Editor>) -> Option<Range<usize>> {
         // Assuming `self` has a field `selection_range` representing the selected text
-        self.selection_range.clone()
+        std::dbg!("Getting selected text range:", &self.selection.range);
+        self.selection.range.clone()
     }
 
     fn marked_text_range(&self, cx: &mut ViewContext<Editor>) -> Option<Range<usize>> {
         // Assuming `self` has a field `marked_range` representing the marked text
-        std::dbg!("marked_text_range", &self.selection_range);
-        self.selection_range.clone()
+        std::dbg!("marked_text_range", &self.selection.range);
+        self.selection.range.clone()
     }
 
     fn unmark_text(&mut self, cx: &mut ViewContext<Editor>) {
@@ -79,10 +93,9 @@ impl ViewInputHandler for Editor {
     }
 
     fn replace_text_in_range(&mut self, range: Option<Range<usize>>, text: &str, cx: &mut ViewContext<Editor>) {
-
         std::dbg!("Trying to update a range of text: {}", &range, &text);
         cx.emit(EditorEvent::InputHandled {
-            range: range.unwrap_or(self.selection_range.clone().unwrap_or(0..0)),
+            range: range.unwrap_or(self.selection.range.clone().unwrap_or(0..0)),
             text: text.to_string(),
         });
     }
