@@ -71,6 +71,11 @@ impl Editor {
         std::dbg!("Buffer changed!");
         cx.notify();
     }
+
+    pub fn set_selection(&mut self, range: Range<usize>, cx: &mut ViewContext<Self>) {
+        self.selection_range = Some(range);
+        cx.notify();
+    }
 }
 
 impl Render for Editor {
@@ -105,20 +110,9 @@ impl ViewInputHandler for Editor {
 
         std::dbg!("Trying to update a range of text: {}", &range, &text);
         cx.emit(EditorEvent::InputHandled {
-            range: range.unwrap_or(0..0),
+            range: range.unwrap_or(self.selection_range.clone().unwrap_or(0..0)),
             text: text.to_string(),
         });
-        
-        // self.buffer.update(cx, |buffer, mod_cx| {
-        //     std::dbg!("Updating text in range!");
-        //     let range = range.unwrap_or(0..0);
-        //     buffer.replace(range.start, range.end, text);
-        //     // mod_cx.notify();
-        //     // mod_cx.emit(EditorEvent::InputHandled {
-        //     //     range,
-        //     //     text: text.to_string(),
-        //     // });
-        // });
     }
 
     fn replace_and_mark_text_in_range(&mut self, range: Option<Range<usize>>, text: &str, mark_range: Option<Range<usize>>, cx: &mut ViewContext<Editor>) {

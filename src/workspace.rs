@@ -24,6 +24,9 @@ impl Workspace {
                             model.replace(range.start, range.end, text);
                             cx.notify();
                         });
+                        cx.update_view(&view, |view, cx| {
+                            view.set_selection(range.start + text.len()..range.start + text.len(), cx);
+                        });
                     },
                     _ => {}
                 }
@@ -35,12 +38,6 @@ impl Workspace {
         });
         view
     }
-
-    // pub fn update_buffer(&mut self, buffer: Model<PieceTable>, cx: &mut ViewContext<Self>) {
-    //     cx.update_model(buffer, |model, cx| {
-    //         model.replace(0, model.content().len(), buffer);
-    //     });
-    // }
 }
 
 impl Render for Workspace {
