@@ -1,7 +1,11 @@
 mod piece_table;
-mod state;
 mod workspace;
+mod cursor;
+mod editor;
+mod editor_element;
 
 pub mod workspace;
-pub mod state;
 pub mod piece_table;
+pub mod cursor;
+pub mod editor;
+pub mod editor_element;

@@ -13,7 +13,7 @@ pub struct PieceTable {
 impl PieceTable {
     pub fn new(string: &str) -> Self {
         Self {
-            original: String::from(string.to_string()),
+            original: String::from(string),
             add: String::new(),
             pieces: vec![Piece {
                 start: 0,
@@ -32,7 +32,7 @@ impl PieceTable {
         self.replace(pos, end, "")
     }
 
-    fn replace(&mut self, start: usize, end: usize, text: &str) -> &mut Self {
+    pub fn replace(&mut self, start: usize, end: usize, text: &str) -> &mut Self {
         // add_buffer_start = length of the 'add' buffer before adding 'text'
         let add_buffer_start = self.add.len();
         // Add text to the add buffer

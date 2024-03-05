@@ -1,31 +1,63 @@
 use gpui::*;
-use super::state::*;
+
+use super::piece_table::PieceTable;
+use super::editor::*;
 
 pub struct Workspace {
-    text_view: View<RawText>,
+    editor: View<Editor>,
 }
 
 impl Workspace {
     pub fn build(cx: &mut WindowContext) -> View<Self> {
-        let view = cx.new_view(|cx| {
-            let text_view = RawText::build(cx);
-            Workspace { text_view }
+        let view: View<Workspace> = cx.new_view(|cx | {
+            let model = cx.new_model(|_| PieceTable::new(""));
+            let editor = cx.new_view(|cx| {
+                let editor = Editor::new(&model, cx);
+                editor
+            });
+
+            cx.subscribe(&editor, move |workspace, view, evt,  cx| {
+                match evt {
+                    EditorEvent::InputHandled { range, text } => {
+                        std::dbg!("Content changed", range, text);
+                        cx.update_model( &model, | model: &mut PieceTable, cx | {
+                            model.replace(range.start, range.end, text);
+                            cx.notify();
+                        });
+                        cx.update_view(&view, |view, cx| {
+                            view.set_selection(range.start + text.len()..range.start + text.len(), cx);
+                            view.set_cursor(Point {
+                                x: view.cursor_point.x + text.len(),
+                                y: 0,
+                            }, cx);
+                        });
+                    },
+                    _ => {}
+                }
+            }).detach();
+
+            Workspace {
+                editor,
+            }
         });
         view
     }
 }
 
 impl Render for Workspace {
-    fn render(&mut self, _cx: &mut ViewContext<Self>) -> impl IntoElement {
+    fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         std::dbg!("Rendering Workspace view");
+        let editor = self.editor.clone();
+                // TODO - there's probably a better way to do this:
+                // Automatically focus the editor. 
+                editor.focus_handle(cx).focus(cx);
+                
         div()
             .size_full()
-            .flex()
-            .flex_col()
+            .py_2()
+            .px_4()
             .bg(rgb(0x333333))
-            .justify_center()
-            .items_center()
-            .child(self.text_view.clone())
+            .child(editor)
     }
 }
 
@@ -37,72 +69,4 @@ pub fn run_app(app: App) {
             view
         });
     })
-}
-
-struct RawText {
-    focus_handle: FocusHandle,
-    pub content: String,
-    pub model: StateModel,
-}
-
-impl RawText {
-    pub fn build(cx: &mut WindowContext) -> View<Self> {
-        let focus_handle = cx.focus_handle();
-        let fh = focus_handle.clone();
-        let view = cx.new_view(move |cx| {
-            let model = cx.global::<StateModel>().clone();
-            let content = model.inner.read(cx).text.content();
-            cx.observe(&model.inner, |this: &mut RawText, model, cx| {
-                this.content = model.read(cx).text.content();
-                cx.notify();
-            })
-            .detach();
-            cx.on_focus(&fh, |_, _cx| {
-                std::dbg!("Focused!");
-            })
-            .detach();
-            cx.on_blur(&fh, |_, cx| {
-                std::dbg!("Blurred!!");
-                cx.hide();
-            })
-            .detach();
-            Self {
-                focus_handle,
-                content,
-                model,
-            }
-        });
-        view
-    }
-}
-
-impl EventEmitter<TextEvent> for RawText {}
-
-impl Render for RawText {
-    fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
-        cx.focus(&self.focus_handle);
-        let model = self.model.clone();
-        // TODO: Implement cursor model, for now, always set cursor to the end of the text
-        let cursor_position = model.inner.read(cx).text.content().len(); 
-        div()
-            .track_focus(&self.focus_handle)
-            .flex()
-            .bg(rgb(0x2a2a2a))
-            .text_color(rgb(0xffffff))
-            .py_2()
-            .px_4()
-            .on_key_down( move |event, window_context| {
-                model.inner.update(window_context, |state, model_context| {
-
-                    // TODO: Handle special key strokes (i.e. space, backspace, etc.)
-                    // TODO: Implement CURSOR model, handle cursor movement
-
-                    model_context.emit(TextEvent::Input { 
-                        keystroke: event.keystroke.clone(),
-                        position: cursor_position.clone(),
-                    });
-                });
-            })
-            .child(format!("{}", self.content))
-    }
 }

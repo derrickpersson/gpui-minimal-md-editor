@@ -1,5 +1,5 @@
 [package]
-name = "wonder-gpui"
+name = "minimal-text-editor-gpui"
 version = "0.1.0"
 edition = "2021"
 
