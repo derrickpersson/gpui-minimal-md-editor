@@ -34,6 +34,8 @@ pub struct LayoutState {
     /// Size of the text area
     text_size: gpui::Size<Pixels>,
     line_height: Pixels,
+    selection_range: Option<Range<usize>>,
+    cursor_point: Point<usize>,
 }
 
 
@@ -41,7 +43,8 @@ pub struct LayoutState {
 pub struct Editor {
     focus_handle: FocusHandle,
     buffer: Model<PieceTable>,
-    selection_range: Option<Range<usize>>,
+    pub selection_range: Option<Range<usize>>,
+    pub cursor_point: Point<usize>,
 }
 
 
@@ -50,19 +53,15 @@ pub struct EditorElement {
 }
 
 impl Editor {
-    pub fn new(cx: &mut WindowContext) -> Self {
+    pub fn new(buffer: &Model<PieceTable>, cx: &mut ViewContext<Self>) -> Self {
         let focus_handle = cx.focus_handle();
         let fh = focus_handle.clone();
-        let model = cx.new_model(|_| PieceTable::new(""));
-        let _ = cx.observe(&model, |model, cx| {
-            std::dbg!("Model updated! We should do something... {}", model.read(cx).content());
-            // TODO - Recreate the editor model / view here.
-            cx.refresh(); // -> Works, but not the right way I'm pretty sure.
-        }).detach();
+        let _ = cx.observe(buffer, Self::on_buffer_changed).detach();
         Editor { 
             focus_handle, 
-            buffer: model,
-            selection_range: Some(0..0),
+            buffer: buffer.clone(),
+            selection_range: None,
+            cursor_point: Point::new(0, 0),
         }
     }
 
@@ -70,6 +69,21 @@ impl Editor {
         let mut key_context = KeyContext::default();
         key_context.add("Editor");
         key_context
+    }
+
+    fn on_buffer_changed(&mut self, _: Model<PieceTable>, cx: &mut ViewContext<Self>) {
+        std::dbg!("Buffer changed!");
+        cx.notify();
+    }
+
+    pub fn set_selection(&mut self, range: Range<usize>, cx: &mut ViewContext<Self>) {
+        self.selection_range = Some(range);
+        cx.notify();
+    }
+
+    pub fn set_cursor(&mut self, point: Point<usize>, cx: &mut ViewContext<Self>) {
+        self.cursor_point = point;
+        cx.notify();
     }
 }
 
@@ -104,16 +118,9 @@ impl ViewInputHandler for Editor {
     fn replace_text_in_range(&mut self, range: Option<Range<usize>>, text: &str, cx: &mut ViewContext<Editor>) {
 
         std::dbg!("Trying to update a range of text: {}", &range, &text);
-        
-        self.buffer.update(cx, |buffer, mod_cx| {
-            std::dbg!("Updating text in range!");
-            let range = range.unwrap_or(0..0);
-            buffer.replace(range.start, range.end, text);
-            mod_cx.notify();
-            // mod_cx.emit(EditorEvent::InputHandled {
-            //     range,
-            //     text: text.to_string(),
-            // });
+        cx.emit(EditorEvent::InputHandled {
+            range: range.unwrap_or(self.selection_range.clone().unwrap_or(0..0)),
+            text: text.to_string(),
         });
     }
 
@@ -213,6 +220,8 @@ impl EditorElement {
                     em_width,
                     em_advance,
                 }),
+                selection_range: editor.selection_range.clone(),
+                cursor_point: editor.cursor_point.clone(),
             }
         })
     }
@@ -270,8 +279,13 @@ impl EditorElement {
         );
         
         cx.with_z_index(1, |cx| {
-            std::dbg!("Painting cursor! {}", content_origin);
-            cursor.paint(content_origin, cx)
+            std::dbg!("Painting cursor! {}", layout.cursor_point);
+            let x = layout.position_map.line_layouts[0].line.x_for_index(layout.cursor_point.x);
+
+            cursor.paint(Point {
+                x: x + content_origin.x,
+                y: content_origin.y,
+            }, cx)
         });
     }
 }
