@@ -50,10 +50,10 @@ pub struct EditorElement {
 }
 
 impl Editor {
-    pub fn new(buffer: Model<PieceTable>, cx: &mut ViewContext<Self>) -> Self {
+    pub fn new(buffer: &Model<PieceTable>, cx: &mut ViewContext<Self>) -> Self {
         let focus_handle = cx.focus_handle();
         let fh = focus_handle.clone();
-        cx.observe(&buffer, Self::on_buffer_changed);
+        let _ = cx.observe(buffer, Self::on_buffer_changed).detach();
         Editor { 
             focus_handle, 
             buffer: buffer.clone(),
@@ -68,6 +68,7 @@ impl Editor {
     }
 
     fn on_buffer_changed(&mut self, _: Model<PieceTable>, cx: &mut ViewContext<Self>) {
+        std::dbg!("Buffer changed!");
         cx.notify();
     }
 }
@@ -103,17 +104,21 @@ impl ViewInputHandler for Editor {
     fn replace_text_in_range(&mut self, range: Option<Range<usize>>, text: &str, cx: &mut ViewContext<Editor>) {
 
         std::dbg!("Trying to update a range of text: {}", &range, &text);
-        
-        self.buffer.update(cx, |buffer, mod_cx| {
-            std::dbg!("Updating text in range!");
-            let range = range.unwrap_or(0..0);
-            buffer.replace(range.start, range.end, text);
-            mod_cx.notify();
-            // mod_cx.emit(EditorEvent::InputHandled {
-            //     range,
-            //     text: text.to_string(),
-            // });
+        cx.emit(EditorEvent::InputHandled {
+            range: range.unwrap_or(0..0),
+            text: text.to_string(),
         });
+        
+        // self.buffer.update(cx, |buffer, mod_cx| {
+        //     std::dbg!("Updating text in range!");
+        //     let range = range.unwrap_or(0..0);
+        //     buffer.replace(range.start, range.end, text);
+        //     // mod_cx.notify();
+        //     // mod_cx.emit(EditorEvent::InputHandled {
+        //     //     range,
+        //     //     text: text.to_string(),
+        //     // });
+        // });
     }
 
     fn replace_and_mark_text_in_range(&mut self, range: Option<Range<usize>>, text: &str, mark_range: Option<Range<usize>>, cx: &mut ViewContext<Editor>) {
